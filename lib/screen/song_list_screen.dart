@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../core/database_helper.dart';
 
 class SongListScreen extends StatefulWidget {
@@ -15,11 +14,119 @@ class _SongListScreenState extends State<SongListScreen> {
   Map<int, List<Map<String, dynamic>>> _categorySongs = {};
   Map<int, bool> _expandedCategories = {};
   bool _isLoading = true;
+  
+  // 카테고리 관리 모드 상태
+  bool _isManageMode = false;
+  Set<int> _selectedCategories = {};
+  bool _isAllSelected = false;
 
   @override
   void initState() {
     super.initState();
     _loadCategoriesAndSongs();
+  }
+
+  // 일반 모드 AppBar
+  Widget _buildNormalAppBar() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        const Text(
+          '저장 목록',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        IconButton(
+          onPressed: _toggleManageMode,
+          icon: const Icon(
+            Icons.menu,
+            color: Color(0xFFFF7A5A),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // 관리 모드 AppBar
+  Widget _buildManageModeAppBar() {
+    return Row(
+      children: [
+        // 전체 선택 체크박스
+        Row(
+          children: [
+            Transform.scale(
+              scale: 0.9,
+              child: Checkbox(
+                value: _isAllSelected,
+                onChanged: (value) => _toggleSelectAll(),
+                activeColor: const Color(0xFFFF7A5A),
+                checkColor: Colors.white,
+              ),
+            ),
+            const Text(
+              '전체선택',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(width: 12),
+        // 삭제 아이콘 버튼
+        IconButton(
+          onPressed: _selectedCategories.isNotEmpty ? _deleteSelectedCategories : null,
+          icon: Icon(
+            Icons.delete_outline,
+            color: _selectedCategories.isNotEmpty ? Colors.red : Colors.white38,
+            size: 22,
+          ),
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+        ),
+
+        const Spacer(),
+        // 추가 버튼
+        ElevatedButton(
+          onPressed: _showAddCategoryDialog,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFFF7A5A),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+            minimumSize: Size.zero,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(6),
+            ),
+          ),
+          child: const Text('+ 카테고리 추가'),
+        ),
+        const SizedBox(width: 8),
+        // 취소 버튼
+        TextButton(
+          onPressed: _toggleManageMode,
+          style: TextButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            minimumSize: Size.zero,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(6),
+            ),
+          ),
+          child: const Text(
+            '취소',
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   // 카테고리와 노래 데이터 로드
@@ -173,7 +280,280 @@ class _SongListScreenState extends State<SongListScreen> {
     );
   }
 
-  // 노래 번호 검색 기능 (추후 구현)
+  // 카테고리 관리 모드 토글
+  void _toggleManageMode() {
+    setState(() {
+      _isManageMode = !_isManageMode;
+      if (!_isManageMode) {
+        // 관리 모드 종료 시 선택 상태 초기화
+        _selectedCategories.clear();
+        _isAllSelected = false;
+      }
+    });
+  }
+
+  // 전체 선택 토글
+  void _toggleSelectAll() {
+    setState(() {
+      if (_isAllSelected) {
+        _selectedCategories.clear();
+      } else {
+        _selectedCategories.addAll(_categories.map((cat) => cat['id'] as int));
+      }
+      _isAllSelected = !_isAllSelected;
+    });
+  }
+
+  // 개별 카테고리 선택 토글
+  void _toggleCategorySelection(int categoryId) {
+    setState(() {
+      if (_selectedCategories.contains(categoryId)) {
+        _selectedCategories.remove(categoryId);
+      } else {
+        _selectedCategories.add(categoryId);
+      }
+      _isAllSelected = _selectedCategories.length == _categories.length;
+    });
+  }
+
+  // 선택된 카테고리 삭제
+  void _deleteSelectedCategories() async {
+    if (_selectedCategories.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('삭제할 카테고리를 선택해주세요.'),
+          backgroundColor: Color(0xFF232B3A),
+        ),
+      );
+      return;
+    }
+
+    // 선택된 카테고리에 포함된 총 노래 수 계산
+    int totalSongs = 0;
+    List<String> categoryNames = [];
+    
+    for (int categoryId in _selectedCategories) {
+      var category = _categories.firstWhere((cat) => cat['id'] == categoryId);
+      categoryNames.add(category['name']);
+      totalSongs += (_categorySongs[categoryId]?.length ?? 0);
+    }
+
+    // 삭제 확인 다이얼로그
+    bool shouldDelete = await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF232B3A),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text(
+            '카테고리 삭제 경고',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '선택된 카테고리: ${_selectedCategories.length}개',
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                categoryNames.join(', '),
+                style: const TextStyle(color: Colors.white70),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red.withOpacity(0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.warning, color: Colors.red, size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          '경고',
+                          style: TextStyle(
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '카테고리와 함께 포함된 모든 노래($totalSongs곡)가 영구적으로 삭제됩니다.',
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      '삭제된 데이터는 복구할 수 없습니다.',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text(
+                '취소',
+                style: TextStyle(color: Colors.white54),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('삭제'),
+            ),
+          ],
+        );
+      },
+    ) ?? false;
+
+    if (shouldDelete) {
+      try {
+        // 선택된 카테고리 삭제
+        for (int categoryId in _selectedCategories) {
+          await _dbHelper.deleteCategory(categoryId);
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${_selectedCategories.length}개 카테고리가 삭제되었습니다.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+
+        // 관리 모드 종료 및 데이터 새로고침
+        _toggleManageMode();
+        await _loadCategoriesAndSongs();
+      } catch (e) {
+        print('카테고리 삭제 오류: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('카테고리 삭제 중 오류가 발생했습니다.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  // 카테고리 추가 다이얼로그
+  void _showAddCategoryDialog() {
+    final TextEditingController categoryNameController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF232B3A),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text(
+            '새 카테고리 추가',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: TextField(
+            controller: categoryNameController,
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              labelText: '카테고리 이름',
+              labelStyle: const TextStyle(color: Colors.white70),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Colors.white24),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Color(0xFFFF7A5A)),
+              ),
+              filled: true,
+              fillColor: const Color(0xFF181E2A),
+            ),
+            autofocus: true,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                '취소',
+                style: TextStyle(color: Colors.white54),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                _addCategory(categoryNameController.text.trim());
+                Navigator.of(context).pop();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFF7A5A),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('추가'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // 카테고리 추가 실행
+  Future<void> _addCategory(String categoryName) async {
+    if (categoryName.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('카테고리 이름을 입력해주세요.'),
+          backgroundColor: Color(0xFF232B3A),
+        ),
+      );
+      return;
+    }
+
+    try {
+      await _dbHelper.insertCategory(categoryName);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('"$categoryName" 카테고리가 추가되었습니다!'),
+          backgroundColor: const Color(0xFFFF7A5A),
+        ),
+      );
+
+      await _loadCategoriesAndSongs();
+    } catch (e) {
+      print('카테고리 추가 오류: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('카테고리 추가 중 오류가 발생했습니다.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
   void _searchSongNumber(String songName, String singer) {
     // TODO: 노래방 번호 검색 기능 구현 예정
     // 예: 웹뷰로 TJ미디어나 금영 사이트 연동
@@ -269,26 +649,12 @@ class _SongListScreenState extends State<SongListScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF181E2A),
         elevation: 0,
-        title: const Text(
-          '저장 목록',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+        automaticallyImplyLeading: false,
+        toolbarHeight: 56, // 고정 높이
+        title: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: _isManageMode ? _buildManageModeAppBar() : _buildNormalAppBar(),
         ),
-        actions: [
-          IconButton(
-            onPressed: () {
-              // 새로고침
-              _loadCategoriesAndSongs();
-            },
-            icon: const Icon(
-              Icons.refresh,
-              color: Color(0xFFFF7A5A),
-            ),
-          ),
-        ],
       ),
       body: _isLoading
           ? const Center(
@@ -338,28 +704,23 @@ class _SongListScreenState extends State<SongListScreen> {
 
   // 카테고리 리스트 빌드
   Widget _buildCategoryList() {
-    return RefreshIndicator(
-      color: const Color(0xFFFF7A5A),
-      backgroundColor: const Color(0xFF232B3A),
-      onRefresh: _loadCategoriesAndSongs,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _categories.length,
-        itemBuilder: (context, index) {
-          final category = _categories[index];
-          final categoryId = category['id'] as int;
-          final categoryName = category['name'] as String;
-          final songs = _categorySongs[categoryId] ?? [];
-          final isExpanded = _expandedCategories[categoryId] ?? false;
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _categories.length,
+      itemBuilder: (context, index) {
+        final category = _categories[index];
+        final categoryId = category['id'] as int;
+        final categoryName = category['name'] as String;
+        final songs = _categorySongs[categoryId] ?? [];
+        final isExpanded = _expandedCategories[categoryId] ?? false;
 
-          return _buildCategoryCard(
-            categoryId: categoryId,
-            categoryName: categoryName,
-            songs: songs,
-            isExpanded: isExpanded,
-          );
-        },
-      ),
+        return _buildCategoryCard(
+          categoryId: categoryId,
+          categoryName: categoryName,
+          songs: songs,
+          isExpanded: isExpanded,
+        );
+      },
     );
   }
 
@@ -384,23 +745,41 @@ class _SongListScreenState extends State<SongListScreen> {
         children: [
           // 카테고리 헤더
           InkWell(
-            onTap: () => _toggleCategoryExpansion(categoryId),
+            onTap: _isManageMode 
+                ? () => _toggleCategorySelection(categoryId)
+                : () => _toggleCategoryExpansion(categoryId),
             borderRadius: BorderRadius.circular(12),
             child: Container(
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  // 접힘/열림 아이콘을 왼쪽으로 이동
-                  AnimatedRotation(
-                    turns: isExpanded ? 0.5 : 0.0,
-                    duration: const Duration(milliseconds: 200),
-                    child: Icon(
-                      Icons.keyboard_arrow_down,
-                      color: isExpanded ? const Color(0xFFFF7A5A) : Colors.white70,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
+                  // 관리 모드일 때 체크박스 표시, 일반 모드일 때 접힘/열림 아이콘
+                  _isManageMode 
+                    ? Row(
+                        children: [
+                          Checkbox(
+                            value: _selectedCategories.contains(categoryId),
+                            onChanged: (value) => _toggleCategorySelection(categoryId),
+                            activeColor: const Color(0xFFFF7A5A),
+                            checkColor: Colors.white,
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          AnimatedRotation(
+                            turns: isExpanded ? 0.5 : 0.0,
+                            duration: const Duration(milliseconds: 200),
+                            child: Icon(
+                              Icons.keyboard_arrow_down,
+                              color: isExpanded ? const Color(0xFFFF7A5A) : Colors.white70,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                        ],
+                      ),
                   // 카테고리 정보
                   Expanded(
                     child: Column(
@@ -425,28 +804,29 @@ class _SongListScreenState extends State<SongListScreen> {
                       ],
                     ),
                   ),
-                  // 노래 추가 버튼 (+ 버튼)
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFF7A5A).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: const Color(0xFFFF7A5A).withOpacity(0.3),
-                        width: 1,
+                  // 노래 추가 버튼 (+ 버튼) - 관리 모드가 아닐 때만 표시
+                  if (!_isManageMode)
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF7A5A).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: const Color(0xFFFF7A5A).withOpacity(0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: IconButton(
+                        onPressed: () => _showAddSongDialog(categoryId, categoryName),
+                        icon: const Icon(
+                          Icons.add,
+                          color: Color(0xFFFF7A5A),
+                          size: 18,
+                        ),
+                        padding: EdgeInsets.zero,
                       ),
                     ),
-                    child: IconButton(
-                      onPressed: () => _showAddSongDialog(categoryId, categoryName),
-                      icon: const Icon(
-                        Icons.add,
-                        color: Color(0xFFFF7A5A),
-                        size: 18,
-                      ),
-                      padding: EdgeInsets.zero,
-                    ),
-                  ),
                 ],
               ),
             ),
