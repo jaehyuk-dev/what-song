@@ -92,12 +92,14 @@ class _HomeScreenState extends State<HomeScreen> {
   // 최근 즐겨찾기 노래 5개 로드 (id 역순으로)
   Future<void> _loadRecentFavoriteSongs() async {
     try {
-      List<Map<String, dynamic>> allFavorites = await _dbHelper.getFavoriteSongs();
-      
-      // id 값이 큰 순서대로 정렬 (최신 순)
+      // ➊ DB에서 받은 결과를 가변 리스트로 복사
+      final rawList = await _dbHelper.getFavoriteSongs();
+      final allFavorites = List<Map<String, dynamic>>.from(rawList);
+
+      // ➋ id 값이 큰 순서대로 정렬 (최신 순)
       allFavorites.sort((a, b) => b['id'].compareTo(a['id']));
-      
-      // 최대 5개만 가져오기
+
+      // ➌ 최대 5개만 가져와 _recentFavoriteSongs에 할당
       setState(() {
         _recentFavoriteSongs = allFavorites.take(5).toList();
       });
@@ -109,13 +111,15 @@ class _HomeScreenState extends State<HomeScreen> {
   // 즐겨찾기 노래 중 랜덤 추천곡 로드
   Future<void> _loadRandomRecommendedSong() async {
     try {
-      List<Map<String, dynamic>> allFavorites = await _dbHelper.getFavoriteSongs();
-      
+      // ➊ DB에서 받은 결과를 가변 리스트로 복사
+      final rawList = await _dbHelper.getFavoriteSongs();
+      final allFavorites = List<Map<String, dynamic>>.from(rawList);
+
+      // ➋ 즐겨찾기된 곡이 하나라도 있으면 랜덤 선택
       if (allFavorites.isNotEmpty) {
-        // 랜덤으로 하나 선택
-        final random = DateTime.now().millisecondsSinceEpoch % allFavorites.length;
+        final randomIndex = DateTime.now().millisecondsSinceEpoch % allFavorites.length;
         setState(() {
-          _randomRecommendedSong = allFavorites[random];
+          _randomRecommendedSong = allFavorites[randomIndex];
         });
       } else {
         setState(() {
