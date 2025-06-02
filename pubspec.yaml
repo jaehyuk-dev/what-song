@@ -36,6 +36,22 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
 
+  sqflite: ^2.3.0             # DB - sqlite
+  loading_indicator: ^3.1.1   # custom loading indicator
+  intl: ^0.20.2               # formating
+  url_launcher: ^6.3.1        # link to others
+
+  shared_preferences: ^2.5.2  # storage
+  path_provider: ^2.1.2
+
+  provider: ^6.1.2
+  logger: ^2.5.0
+
+  webview_flutter: ^4.2.0  # 웹뷰 패키지
+  geolocator: ^13.0.1  # 위치 정보 가져오기
+  permission_handler: ^10.2.0  # 권한 관리
+
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
