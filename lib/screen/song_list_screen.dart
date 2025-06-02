@@ -129,21 +129,23 @@ class _SongListScreenState extends State<SongListScreen> {
     );
   }
 
-  // 카테고리와 노래 데이터 로드
-  Future<void> _loadCategoriesAndSongs() async {
+// SongListScreen 클래스 내부
+// 1. _loadCategoriesAndSongs 메서드 수정본
+  Future<void> _loadCategoriesAndSongs({ Map<int, bool>? preserveExpanded }) async {
     setState(() {
       _isLoading = true;
     });
 
     try {
-      // 모든 카테고리 로드
+      // [1] 모든 카테고리 로드
       List<Map<String, dynamic>> categories = await _dbHelper.getAllCategories();
-      
-      // 각 카테고리별 노래 로드
+
+      // [2] 카테고리별로 노래 로드
       Map<int, List<Map<String, dynamic>>> categorySongs = {};
       for (var category in categories) {
         int categoryId = category['id'];
-        List<Map<String, dynamic>> songs = await _dbHelper.getSongsByCategory(categoryId);
+        List<Map<String, dynamic>> songs =
+        await _dbHelper.getSongsByCategory(categoryId);
         categorySongs[categoryId] = songs;
       }
 
@@ -151,10 +153,11 @@ class _SongListScreenState extends State<SongListScreen> {
         _categories = categories;
         _categorySongs = categorySongs;
         _isLoading = false;
-        
-        // 모든 카테고리를 기본적으로 접힌 상태로 초기화
+
+        // [3] 확장 상태 보존 로직
         _expandedCategories = {
-          for (var category in categories) category['id']: false
+          for (var category in categories)
+            category['id']: (preserveExpanded?[category['id']] == true)
         };
       });
     } catch (e) {
@@ -165,16 +168,25 @@ class _SongListScreenState extends State<SongListScreen> {
     }
   }
 
+
   // 즐겨찾기 토글
+// 2. _toggleFavorite 메서드 수정본
   Future<void> _toggleFavorite(int songId) async {
     try {
+      // [1] 현재 확장 상태 복사본 생성
+      final previousExpanded = Map<int, bool>.from(_expandedCategories);
+
+      // [2] DB에 is_favorite 토글
       await _dbHelper.toggleFavorite(songId);
-      // 데이터 새로고침
-      await _loadCategoriesAndSongs();
+
+      // [3] 전체 데이터를 다시 불러오되, 확장 상태 보존
+      await _loadCategoriesAndSongs(preserveExpanded: previousExpanded);
     } catch (e) {
       print('즐겨찾기 토글 오류: $e');
     }
   }
+
+
 
   // 카테고리 확장/축소 토글
   void _toggleCategoryExpansion(int categoryId) {
@@ -569,10 +581,15 @@ class _SongListScreenState extends State<SongListScreen> {
   }
 
   // 노래 삭제 실행
+// 3. _deleteSong 메서드 수정본
   Future<void> _deleteSong(int songId, String songName) async {
     try {
+      // [1] 현재 확장 상태 복사본 생성
+      final previousExpanded = Map<int, bool>.from(_expandedCategories);
+
+      // [2] DB에서 노래 삭제
       await _dbHelper.deleteSong(songId);
-      
+
       // 성공 메시지
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -581,9 +598,9 @@ class _SongListScreenState extends State<SongListScreen> {
           duration: const Duration(seconds: 2),
         ),
       );
-      
-      // 데이터 새로고침
-      await _loadCategoriesAndSongs();
+
+      // [3] 전체 데이터를 다시 불러오되, 확장 상태 보존
+      await _loadCategoriesAndSongs(preserveExpanded: previousExpanded);
     } catch (e) {
       print('노래 삭제 오류: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -595,13 +612,14 @@ class _SongListScreenState extends State<SongListScreen> {
     }
   }
 
+
   // 노래 추가 실행
+// 4. _addSong 메서드 수정본
   Future<void> _addSong({
     required int categoryId,
     required String songName,
     required String singer,
   }) async {
-    // 입력값 검증
     if (songName.isEmpty || singer.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -613,7 +631,10 @@ class _SongListScreenState extends State<SongListScreen> {
     }
 
     try {
-      // 데이터베이스에 노래 추가
+      // [1] 현재 확장 상태 복사본 생성
+      final previousExpanded = Map<int, bool>.from(_expandedCategories);
+
+      // [2] DB에 노래 추가
       await _dbHelper.insertSong(
         categoryId: categoryId,
         name: songName,
@@ -629,8 +650,8 @@ class _SongListScreenState extends State<SongListScreen> {
         ),
       );
 
-      // 데이터 새로고침
-      await _loadCategoriesAndSongs();
+      // [3] 전체 데이터를 다시 불러오되, 확장 상태 보존
+      await _loadCategoriesAndSongs(preserveExpanded: previousExpanded);
     } catch (e) {
       print('노래 추가 오류: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -641,6 +662,7 @@ class _SongListScreenState extends State<SongListScreen> {
       );
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -670,7 +692,7 @@ class _SongListScreenState extends State<SongListScreen> {
 
   // 빈 상태 위젯
   Widget _buildEmptyState() {
-    return Center(
+    return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -679,8 +701,8 @@ class _SongListScreenState extends State<SongListScreen> {
             size: 80,
             color: Colors.white24,
           ),
-          const SizedBox(height: 16),
-          const Text(
+          SizedBox(height: 16),
+          Text(
             '아직 카테고리가 없습니다',
             style: TextStyle(
               color: Colors.white54,
@@ -688,8 +710,8 @@ class _SongListScreenState extends State<SongListScreen> {
               fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 8),
-          const Text(
+          SizedBox(height: 8),
+          Text(
             '노래를 추가해서 카테고리를 만들어보세요!',
             style: TextStyle(
               color: Colors.white38,
