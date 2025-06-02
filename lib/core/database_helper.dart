@@ -3,106 +3,228 @@ import 'package:path/path.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();
-  factory DatabaseHelper() => _instance;
   static Database? _database;
 
   DatabaseHelper._internal();
 
-// Future<Database> get database async {
-//   if (_database != null) return _database!;
-//   _database = await _initDatabase();
-//   return _database!;
-// }
+  // 싱글톤 패턴으로 인스턴스 반환
+  factory DatabaseHelper() {
+    return _instance;
+  }
 
-// Future<Database> _initDatabase() async {
-//   String path = join(await getDatabasesPath(), 'menu_database.db');
-//   return await openDatabase(
-//     path,
-//     version: 2, // ✅ DB 버전을 증가시켜야 기존 DB를 삭제하고 다시 생성함
-//     onCreate: (db, version) async {
-//       await db.execute(
-//         'CREATE TABLE menu (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE, category TEXT)',
-//       );
-//
-//       await db.execute(
-//         'CREATE TABLE selected_menu (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, selected_at TEXT)',
-//       );
-//
-//       await _insertInitialMenus(db);
-//     },
-//     onUpgrade: (db, oldVersion, newVersion) async {
-//       if (oldVersion < 2) {
-//         await db.execute(
-//           'CREATE TABLE IF NOT EXISTS selected_menu (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, selected_at TEXT)',
-//         );
-//       }
-//     },
-//   );
-// }
+  // 데이터베이스 인스턴스 반환 (없으면 생성)
+  Future<Database> get database async {
+    if (_database != null) return _database!;
+    _database = await _initDatabase();
+    return _database!;
+  }
 
-// // ✅ 최초 1회 실행되는 데이터 삽입 로직
-// Future<void> _insertInitialMenus(Database db) async {
-//   List<Map<String, dynamic>> existingMenus = await db.query('menu');
-//   if (existingMenus.isNotEmpty) return; // 이미 데이터가 있으면 추가 X
-//
-//   Batch batch = db.batch();
-//   for (var menu in menus) {
-//     batch.insert('menu', menu, conflictAlgorithm: ConflictAlgorithm.ignore);
-//   }
-//   await batch.commit();
-// }
-//
-// // ✅ 선택된 메뉴 저장 (name, 선택 시간)
-// Future<int> insertSelectedMenu(String name) async {
-//   final db = await database;
-//   return await db.insert(
-//     'selected_menu',
-//     {'name': name, 'selected_at': DateTime.now().toIso8601String()},
-//   );
-// }
-//
-// // ✅ 선택된 메뉴 가져오기 (최근 선택된 메뉴 리스트)
-// Future<List<Map<String, dynamic>>> getSelectedMenus() async {
-//   final db = await database;
-//   return await db.query('selected_menu', orderBy: 'selected_at DESC');
-// }
-//
-// // ✅ 메뉴 리스트 가져오기
-// Future<List<Map<String, dynamic>>> getMenus() async {
-//   final db = await database;
-//   return await db.query('menu');
-// }
-//
-// // ✅ 메뉴 삭제
-// Future<int> deleteMenu(int id) async {
-//   final db = await database;
-//   return await db.delete('menu', where: 'id = ?', whereArgs: [id]);
-// }
-//
-// // ✅ 선택된 메뉴 삭제
-// Future<int> deleteSelectedMenu(int id) async {
-//   final db = await database;
-//   return await db.delete('selected_menu', where: 'id = ?', whereArgs: [id]);
-// }
-//
-// // ✅ 최근 선택된 메뉴 3개 가져오는 메서드 추가
-// Future<List<Map<String, dynamic>>> getRecentSelectedMenus() async {
-//   final db = await database;
-//   return await db.query(
-//     'selected_menu',
-//     orderBy: 'selected_at DESC',
-//     limit: 3, // 🔥 최근 3개만 가져오기
-//   );
-// }
-//
-// Future<List<Map<String, dynamic>>> getAllMenus() async {
-//   final db = await database;
-//   return await db.query("selected_menu", orderBy: "selected_at DESC");
-// }
-//
-// // ✅ 선택된 메뉴 전체 삭제 (검색 기록 초기화)
-// Future<void> clearSelectedMenuHistory() async {
-//   final db = await database;
-//   await db.delete('selected_menu'); // 모든 기록 삭제
-// }
+  // 데이터베이스 초기화 및 생성
+  Future<Database> _initDatabase() async {
+    // 데이터베이스 파일 경로 설정
+    String path = join(await getDatabasesPath(), 'music_app.db');
+
+    return await openDatabase(
+      path,
+      version: 1,
+      onCreate: _createTables,
+    );
+  }
+
+  // 테이블 생성 함수
+  Future<void> _createTables(Database db, int version) async {
+    // 카테고리 테이블 생성
+    await db.execute('''
+      CREATE TABLE categories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL
+      )
+    ''');
+
+    // 노래 테이블 생성 (즐겨찾기 컬럼 포함)
+    await db.execute('''
+      CREATE TABLE songs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        category_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        singer TEXT NOT NULL,
+        is_favorite INTEGER NOT NULL DEFAULT 0,
+        FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE CASCADE
+      )
+    ''');
+
+    // 기본 카테고리 데이터 삽입
+    await _insertDefaultCategories(db);
+  }
+
+  // 기본 카테고리 데이터 삽입
+  Future<void> _insertDefaultCategories(Database db) async {
+    List<String> defaultCategories = [
+      'K-POP',
+      'POP',
+      '발라드',
+      '힙합',
+      '록',
+      '인디',
+      'OST',
+    ];
+
+    for (String categoryName in defaultCategories) {
+      await db.insert('categories', {'name': categoryName});
+    }
+  }
+
+  // === 카테고리 관련 메서드 ===
+
+  // 모든 카테고리 조회
+  Future<List<Map<String, dynamic>>> getAllCategories() async {
+    final db = await database;
+    return await db.query('categories', orderBy: 'name ASC');
+  }
+
+  // 카테고리 추가
+  Future<int> insertCategory(String name) async {
+    final db = await database;
+    return await db.insert('categories', {'name': name});
+  }
+
+  // 카테고리 삭제
+  Future<int> deleteCategory(int id) async {
+    final db = await database;
+    return await db.delete('categories', where: 'id = ?', whereArgs: [id]);
+  }
+
+  // === 노래 관련 메서드 ===
+
+  // 모든 노래 조회
+  Future<List<Map<String, dynamic>>> getAllSongs() async {
+    final db = await database;
+    return await db.rawQuery('''
+      SELECT songs.*, categories.name as category_name 
+      FROM songs 
+      JOIN categories ON songs.category_id = categories.id 
+      ORDER BY songs.name ASC
+    ''');
+  }
+
+  // 카테고리별 노래 조회
+  Future<List<Map<String, dynamic>>> getSongsByCategory(int categoryId) async {
+    final db = await database;
+    return await db.rawQuery('''
+      SELECT songs.*, categories.name as category_name 
+      FROM songs 
+      JOIN categories ON songs.category_id = categories.id 
+      WHERE songs.category_id = ? 
+      ORDER BY songs.name ASC
+    ''', [categoryId]);
+  }
+
+  // 즐겨찾기 노래 조회
+  Future<List<Map<String, dynamic>>> getFavoriteSongs() async {
+    final db = await database;
+    return await db.rawQuery('''
+      SELECT songs.*, categories.name as category_name 
+      FROM songs 
+      JOIN categories ON songs.category_id = categories.id 
+      WHERE songs.is_favorite = 1 
+      ORDER BY songs.name ASC
+    ''');
+  }
+
+  // 노래 검색
+  Future<List<Map<String, dynamic>>> searchSongs(String query) async {
+    final db = await database;
+    return await db.rawQuery('''
+      SELECT songs.*, categories.name as category_name 
+      FROM songs 
+      JOIN categories ON songs.category_id = categories.id 
+      WHERE songs.name LIKE ? OR songs.singer LIKE ? 
+      ORDER BY songs.name ASC
+    ''', ['%$query%', '%$query%']);
+  }
+
+  // 노래 추가
+  Future<int> insertSong({
+    required int categoryId,
+    required String name,
+    required String singer,
+    bool isFavorite = false,
+  }) async {
+    final db = await database;
+    return await db.insert('songs', {
+      'category_id': categoryId,
+      'name': name,
+      'singer': singer,
+      'is_favorite': isFavorite ? 1 : 0,
+    });
+  }
+
+  // 노래 수정
+  Future<int> updateSong({
+    required int id,
+    required int categoryId,
+    required String name,
+    required String singer,
+    required bool isFavorite,
+  }) async {
+    final db = await database;
+    return await db.update(
+      'songs',
+      {
+        'category_id': categoryId,
+        'name': name,
+        'singer': singer,
+        'is_favorite': isFavorite ? 1 : 0,
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  // 즐겨찾기 상태 토글
+  Future<int> toggleFavorite(int songId) async {
+    final db = await database;
+
+    // 현재 즐겨찾기 상태 확인
+    List<Map<String, dynamic>> result = await db.query(
+      'songs',
+      columns: ['is_favorite'],
+      where: 'id = ?',
+      whereArgs: [songId],
+    );
+
+    if (result.isNotEmpty) {
+      int currentFavorite = result.first['is_favorite'];
+      int newFavorite = currentFavorite == 1 ? 0 : 1;
+
+      return await db.update(
+        'songs',
+        {'is_favorite': newFavorite},
+        where: 'id = ?',
+        whereArgs: [songId],
+      );
+    }
+    return 0;
+  }
+
+  // 노래 삭제
+  Future<int> deleteSong(int id) async {
+    final db = await database;
+    return await db.delete('songs', where: 'id = ?', whereArgs: [id]);
+  }
+
+  // === 유틸리티 메서드 ===
+
+  // 데이터베이스 닫기
+  Future<void> closeDatabase() async {
+    final db = await database;
+    await db.close();
+  }
+
+  // 데이터베이스 삭제 (개발용)
+  Future<void> deleteDatabase() async {
+    String path = join(await getDatabasesPath(), 'music_app.db');
+    await databaseFactory.deleteDatabase(path);
+    _database = null;
+  }
 }

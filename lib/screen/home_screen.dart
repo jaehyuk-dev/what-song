@@ -1,9 +1,131 @@
 import 'package:flutter/material.dart';
 
-class HomeScreen extends StatelessWidget {
+import '../core/database_helper.dart';
+
+class HomeScreen extends StatefulWidget {
   final Function(int)? onTabChange;
 
   const HomeScreen({Key? key, this.onTabChange}) : super(key: key);
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final DatabaseHelper _dbHelper = DatabaseHelper();
+  List<Map<String, dynamic>> _recentFavoriteSongs = [];
+  Map<String, dynamic>? _randomRecommendedSong;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecentFavoriteSongs();
+    _loadRandomRecommendedSong();
+  }
+
+  // 동적 추천곡 카드 생성
+  Widget _buildRecommendedSongCard() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFC466B), Color(0xFF3F5EFB)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '오늘의 추천곡',
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  _randomRecommendedSong?['name'] ?? '즐겨찾기한 노래가 없어요',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _randomRecommendedSong?['singer'] ?? '노래를 추가해보세요!',
+                  style: const TextStyle(color: Colors.white70, fontSize: 16),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          IconButton(
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.deepOrange,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+            onPressed: () {
+              // 다른 랜덤 추천곡 로드
+              _loadRandomRecommendedSong();
+            },
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 최근 즐겨찾기 노래 5개 로드 (id 역순으로)
+  Future<void> _loadRecentFavoriteSongs() async {
+    try {
+      List<Map<String, dynamic>> allFavorites = await _dbHelper.getFavoriteSongs();
+      
+      // id 값이 큰 순서대로 정렬 (최신 순)
+      allFavorites.sort((a, b) => b['id'].compareTo(a['id']));
+      
+      // 최대 5개만 가져오기
+      setState(() {
+        _recentFavoriteSongs = allFavorites.take(5).toList();
+      });
+    } catch (e) {
+      print('즐겨찾기 노래 로드 오류: $e');
+    }
+  }
+
+  // 즐겨찾기 노래 중 랜덤 추천곡 로드
+  Future<void> _loadRandomRecommendedSong() async {
+    try {
+      List<Map<String, dynamic>> allFavorites = await _dbHelper.getFavoriteSongs();
+      
+      if (allFavorites.isNotEmpty) {
+        // 랜덤으로 하나 선택
+        final random = DateTime.now().millisecondsSinceEpoch % allFavorites.length;
+        setState(() {
+          _randomRecommendedSong = allFavorites[random];
+        });
+      } else {
+        setState(() {
+          _randomRecommendedSong = null;
+        });
+      }
+    } catch (e) {
+      print('추천곡 로드 오류: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,9 +143,9 @@ class HomeScreen extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.music_note_rounded,
-                        color: const Color(0xFFFF7A5A), // 포인트 컬러 적용
+                        color: Color(0xFFFF7A5A), // 포인트 컬러 적용
                         size: 28, // 아이콘 크기를 약간 줄여 텍스트와 조화롭게 조정
                       ),
                       const SizedBox(width: 6),
@@ -44,9 +166,9 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 6),
-                      Icon(
+                      const Icon(
                         Icons.music_note_rounded,
-                        color: const Color(0xFFFF7A5A),
+                        color: Color(0xFFFF7A5A),
                         size: 28,
                       ),
                     ],
@@ -65,55 +187,8 @@ class HomeScreen extends StatelessWidget {
                     style: TextStyle(fontSize: 14, color: Colors.white70),
                   ),
                   const SizedBox(height: 24),
-                  // 오늘의 추천곡 카드
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFFC466B), Color(0xFF3F5EFB)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    padding: const EdgeInsets.all(20),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
-                            Text('오늘의 추천곡',
-                                style: TextStyle(
-                                    color: Colors.white70, fontSize: 14)),
-                            SizedBox(height: 6),
-                            Text('그대라는 시',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold)),
-                            SizedBox(height: 2),
-                            Text('태연',
-                                style: TextStyle(
-                                    color: Colors.white70, fontSize: 16)),
-                            SizedBox(height: 8),
-                            // Text('TJ 12345',
-                            //     style: TextStyle(color: Colors.white, fontSize: 12)),
-                          ],
-                        ),
-                        IconButton(
-                          style: IconButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.deepOrange,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20)),
-                          ),
-                          onPressed: () {},
-                          icon: const Icon(Icons.refresh),
-                        ),
-                      ],
-                    ),
-                  ),
+                  // 동적 추천곡 카드
+                  _buildRecommendedSongCard(),
                   const SizedBox(height: 20),
                   // 주변 노래방, 노래 검색 버튼
                   Row(
@@ -150,82 +225,167 @@ class HomeScreen extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('내 노래 리스트',
+                      const Text('즐겨찾기',
                           style: TextStyle(
                               color: Colors.white,
                               fontSize: 16,
                               fontWeight: FontWeight.bold)),
                       TextButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          // 즐겨찾기 탭으로 이동 (인덱스 2번)
+                          if (widget.onTabChange != null) {
+                            widget.onTabChange!(2);
+                          }
+                        },
                         child: const Text('전체보기',
                             style: TextStyle(color: Color(0xFFFF7A5A))),
                       ),
                     ],
                   ),
-                  // 노래 리스트
-                  Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF232B3A),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 12, horizontal: 16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('마리아 (Maria)',
-                                style: TextStyle(
-                                    color: Colors.white, fontSize: 16)),
-                            SizedBox(height: 2),
-                            Text('화사',
-                                style: TextStyle(
-                                    color: Colors.white54, fontSize: 13)),
-                          ],
-                        ),
-                        Text('금영 2424',
-                            style:
-                                TextStyle(color: Colors.white70, fontSize: 13)),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF232B3A),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 12, horizontal: 16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Hype Boy',
-                                style: TextStyle(
-                                    color: Colors.white, fontSize: 16)),
-                            SizedBox(height: 2),
-                            Text('NewJeans',
-                                style: TextStyle(
-                                    color: Colors.white54, fontSize: 13)),
-                          ],
-                        ),
-                        Text('TJ 98765',
-                            style:
-                                TextStyle(color: Colors.white70, fontSize: 13)),
-                      ],
-                    ),
-                  ),
+                  // 동적 노래 리스트 (즐겨찾기 최신 5개)
+                  ..._buildRecentFavoriteSongsList(),
                 ],
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // 최근 즐겨찾기 노래 리스트 UI 생성
+  List<Widget> _buildRecentFavoriteSongsList() {
+    if (_recentFavoriteSongs.isEmpty) {
+      return [
+        Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF232B3A),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+          child: const Center(
+            child: Text(
+              '아직 즐겨찾기한 노래가 없습니다.\n노래를 추가하고 ❤️를 눌러보세요!',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white54,
+                fontSize: 14,
+              ),
+            ),
+          ),
+        ),
+      ];
+    }
+
+    return _recentFavoriteSongs.map((song) {
+      return Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF232B3A),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    song['name'] ?? '',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    song['singer'] ?? '',
+                    style: const TextStyle(
+                      color: Colors.white54,
+                      fontSize: 13,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            // 검색 버튼으로 변경
+            IconButton(
+              onPressed: () {
+                // 검색 기능 구현 (추후 검색 화면으로 이동)
+                _showSearchDialog(song['name'], song['singer']);
+              },
+              icon: const Icon(
+                Icons.search,
+                color: Color(0xFFFF7A5A),
+                size: 20,
+              ),
+              style: IconButton.styleFrom(
+                backgroundColor: const Color(0xFF181E2A),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }).toList();
+  }
+
+  // 검색 다이얼로그 표시
+  void _showSearchDialog(String songName, String singer) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF232B3A),
+          title: const Text(
+            '노래방 번호 검색',
+            style: TextStyle(color: Colors.white),
+          ),
+          content: Text(
+            '$songName - $singer\n\n이 노래의 노래방 번호를 검색하시겠습니까?',
+            style: const TextStyle(color: Colors.white70),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                '취소',
+                style: TextStyle(color: Colors.white54),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                // 실제 검색 기능 구현 (웹뷰나 외부 앱 연동)
+                _performSearch(songName, singer);
+              },
+              child: const Text(
+                '검색',
+                style: TextStyle(color: Color(0xFFFF7A5A)),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // 실제 검색 수행 (추후 구현)
+  void _performSearch(String songName, String singer) {
+    // 여기에 실제 노래방 번호 검색 로직 구현
+    // 예: 웹뷰로 TJ미디어나 금영 사이트 연동
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('"$songName - $singer" 검색 기능은 준비 중입니다.'),
+        backgroundColor: const Color(0xFF232B3A),
       ),
     );
   }
