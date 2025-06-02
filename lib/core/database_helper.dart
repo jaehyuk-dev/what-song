@@ -131,6 +131,18 @@ class DatabaseHelper {
     ''');
   }
 
+  // 카테고리별 즐겨찾기 노래 조회
+  Future<List<Map<String, dynamic>>> getFavoriteSongsByCategory(int categoryId) async {
+    final db = await database;
+    return await db.rawQuery('''
+      SELECT songs.*, categories.name as category_name 
+      FROM songs 
+      JOIN categories ON songs.category_id = categories.id 
+      WHERE songs.is_favorite = 1 AND songs.category_id = ? 
+      ORDER BY songs.name ASC
+    ''', [categoryId]);
+  }
+
   // 노래 검색
   Future<List<Map<String, dynamic>>> searchSongs(String query) async {
     final db = await database;
