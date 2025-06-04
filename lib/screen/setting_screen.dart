@@ -298,7 +298,7 @@ class _SettingScreenState extends State<SettingScreen> {
   /// 개인정보처리방침 페이지로 이동
   Future<void> _openPrivacyPolicy() async {
     // 실제 개인정보처리방침 URL로 변경하세요
-    const String privacyUrl = 'https://your-website.com/privacy-policy';
+    const String privacyUrl = 'https://sites.google.com/view/what-song-privacy-policy';
     await _launchUrl(privacyUrl);
   }
 
