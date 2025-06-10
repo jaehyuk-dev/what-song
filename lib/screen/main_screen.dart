@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../service/loading_service.dart';
 import 'home_screen.dart';
@@ -18,7 +19,14 @@ class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
 
   // 네비게이션 아이템 선택 시 호출되는 함수
+// 네비게이션 아이템 선택 시 호출되는 함수
   void _onItemTapped(int index) {
+    // 탐색하기 탭(인덱스 1)을 누른 경우 지도 열기
+    if (index == 1) {
+      _launchNaverMap();
+      return; // 함수 종료하여 화면 변경 방지
+    }
+
     setState(() {
       _currentIndex = index;
     });
@@ -73,5 +81,31 @@ class _MainScreenState extends State<MainScreen> {
         onTap: _onItemTapped,
       ),
     );
+  }
+
+
+  Future<void> _launchNaverMap() async {
+    try {
+      await LoadingService.withLoading(() async {
+        final encodedKeyword = Uri.encodeComponent("코인노래방");
+        final appSchemeUrl = "nmap://search?query=$encodedKeyword&appname=com.app.lunch_mate";
+        final webUrl = "https://m.map.naver.com/search2/search.naver?query=$encodedKeyword";
+
+        // 네이버 지도 앱이 설치되어 있는지 확인
+        if (await canLaunchUrl(Uri.parse(appSchemeUrl))) {
+          await launchUrl(Uri.parse(appSchemeUrl));
+        } else {
+          // 앱이 없으면 웹 브라우저에서 열기
+          await launchUrl(Uri.parse(webUrl), mode: LaunchMode.externalApplication);
+        }
+      });
+    } catch (e) {
+      print('네이버 지도 열기 오류: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('지도 앱 실행 중 오류가 발생했습니다.')),
+        );
+      }
+    }
   }
 }

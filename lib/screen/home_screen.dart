@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/database_helper.dart';
+import '../service/loading_service.dart';
 
 class HomeScreen extends StatefulWidget {
   final Function(int)? onTabChange;
@@ -71,19 +72,49 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(width: 12),
-          IconButton(
-            style: IconButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: Colors.deepOrange,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+          // 버튼 그룹 (검색 + 새로고침)
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 새로고침 버튼
+              IconButton(
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.deepOrange,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  minimumSize: const Size(40, 40),
+                ),
+                onPressed: () {
+                  // 다른 랜덤 추천곡 로드
+                  _loadRandomRecommendedSong();
+                },
+                icon: const Icon(Icons.refresh, size: 20),
               ),
-            ),
-            onPressed: () {
-              // 다른 랜덤 추천곡 로드
-              _loadRandomRecommendedSong();
-            },
-            icon: const Icon(Icons.refresh),
+              const SizedBox(height: 8),
+              // 검색 버튼 - TJ미디어 사이트로 연결
+              IconButton(
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFFFC466B),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  minimumSize: const Size(40, 40),
+                ),
+                onPressed: _randomRecommendedSong != null 
+                  ? () {
+                      // 추천곡이 있을 때만 검색 기능 실행
+                      _searchSongNumber(
+                        _randomRecommendedSong!['name'], 
+                        _randomRecommendedSong!['singer']
+                      );
+                    }
+                  : null, // 추천곡이 없으면 비활성화
+                icon: const Icon(Icons.search, size: 20),
+              ),
+            ],
           ),
         ],
       ),
@@ -207,7 +238,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           icon: const Icon(Icons.place_outlined),
                           label: const Text('주변 노래방'),
-                          onPressed: () {},
+                          onPressed: () {
+                            _launchNaverMap();
+                          },
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -220,7 +253,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           icon: const Icon(Icons.search),
                           label: const Text('번호 검색'),
-                          onPressed: () {},
+                          onPressed: () {
+                            _searchSongNumber("", "");
+                          },
                         ),
                       ),
                     ],
@@ -381,6 +416,31 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
     );
+  }
+
+  Future<void> _launchNaverMap() async {
+    try {
+      await LoadingService.withLoading(() async {
+        final encodedKeyword = Uri.encodeComponent("코인노래방");
+        final appSchemeUrl = "nmap://search?query=$encodedKeyword&appname=com.app.lunch_mate";
+        final webUrl = "https://m.map.naver.com/search2/search.naver?query=$encodedKeyword";
+
+        // 네이버 지도 앱이 설치되어 있는지 확인
+        if (await canLaunchUrl(Uri.parse(appSchemeUrl))) {
+          await launchUrl(Uri.parse(appSchemeUrl));
+        } else {
+          // 앱이 없으면 웹 브라우저에서 열기
+          await launchUrl(Uri.parse(webUrl), mode: LaunchMode.externalApplication);
+        }
+      });
+    } catch (e) {
+      print('네이버 지도 열기 오류: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('지도 앱 실행 중 오류가 발생했습니다.')),
+        );
+      }
+    }
   }
 
   // TJ미디어 사이트에서 노래 검색을 위한 URL 실행 함수
