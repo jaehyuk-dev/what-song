@@ -395,7 +395,9 @@ class _SettingScreenState extends State<SettingScreen> {
               icon: Icons.star_rate,
               title: '앱 평점 남기기',
               subtitle: 'Google Play Store / App Store에서 리뷰를 남겨주세요',
-              onTap: _openAppStore,
+              onTap: () {
+                _openAppStore();
+              },
               iconColor: Colors.amber,
             ),
             
@@ -407,14 +409,18 @@ class _SettingScreenState extends State<SettingScreen> {
               icon: Icons.email,
               title: '문의하기',
               subtitle: '개발자에게 이메일로 문의하세요',
-              onTap: _sendEmail,
+              onTap: () {
+                _sendEmail();
+              },
               iconColor: Colors.blue,
             ),
             _buildSettingItem(
               icon: Icons.privacy_tip,
               title: '개인정보처리방침',
               subtitle: '개인정보 보호 정책을 확인하세요',
-              onTap: _openPrivacyPolicy,
+              onTap: () {
+                _openPrivacyPolicy();
+              },
               iconColor: Colors.green,
             ),
             
@@ -426,7 +432,9 @@ class _SettingScreenState extends State<SettingScreen> {
               icon: Icons.refresh,
               title: '앱 초기화',
               subtitle: '모든 데이터를 삭제하고 앱을 초기 상태로 되돌립니다',
-              onTap: _resetApp,
+              onTap: () {
+                _resetApp();
+              },
               iconColor: Colors.red,
             ),
             
@@ -480,7 +488,9 @@ class _SettingScreenState extends State<SettingScreen> {
                   ),
                   const SizedBox(height: 4),
                   GestureDetector(
-                    onTap: _sendEmail,
+                    onTap: () {
+                      _sendEmail();
+                    },
                     child: Text(
                       _developerEmail,
                       style: const TextStyle(
