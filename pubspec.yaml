@@ -48,10 +48,6 @@ dependencies:
   logger: ^2.5.0
   package_info_plus: ^8.0.2  # 앱 정보 가져오기
 
-  webview_flutter: ^4.2.0  # 웹뷰 패키지
-  geolocator: ^13.0.1  # 위치 정보 가져오기
-  permission_handler: ^10.2.0  # 권한 관리
-
 
 dev_dependencies:
   flutter_test:

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../core/database_helper.dart';
 
 class SongListScreen extends StatefulWidget {
@@ -566,22 +567,65 @@ class _SongListScreenState extends State<SongListScreen> {
       );
     }
   }
-  void _searchSongNumber(String songName, String singer) {
-    // TODO: 노래방 번호 검색 기능 구현 예정
-    // 예: 웹뷰로 TJ미디어나 금영 사이트 연동
-    // 또는 외부 API 호출
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('"$songName - $singer" 검색 기능은 준비 중입니다.'),
-        backgroundColor: const Color(0xFF232B3A),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+
+  // TJ미디어 사이트에서 노래 검색을 위한 URL 실행 함수
+  void _searchSongNumber(String songName, String singer) async {
+    try {
+      // 노래 제목을 URL 인코딩하여 검색 URL 생성
+      final encodedSongTitle = Uri.encodeComponent(songName);
+      final searchUrl = 'https://www.tjmedia.com/song/accompaniment_search?nationType=&strType=0&searchTxt=$encodedSongTitle';
+
+      // URL을 Uri 객체로 변환
+      final uri = Uri.parse(searchUrl);
+
+      // 기본 웹 브라우저에서 URL 열기 (수정된 부분)
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication,  // 외부 브라우저로 열기
+          webViewConfiguration: const WebViewConfiguration(
+            enableJavaScript: true,
+            enableDomStorage: true,
+          ),
+        );
+      } else {
+        // canLaunchUrl이 false를 반환해도 시도해보기
+        try {
+          await launchUrl(
+            uri,
+            mode: LaunchMode.externalApplication,
+          );
+        } catch (e) {
+          print('URL 실행 실패: $e');
+          // URL 실행 실패 시 에러 메시지 표시
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('웹 브라우저를 열 수 없습니다.'),
+                backgroundColor: Colors.red,
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      print('검색 오류: $e');
+      // 예외 발생 시 에러 메시지 표시
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('검색 중 오류가 발생했습니다: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
   }
 
   // 노래 삭제 실행
-// 3. _deleteSong 메서드 수정본
+  // 3. _deleteSong 메서드 수정본
   Future<void> _deleteSong(int songId, String songName) async {
     try {
       // [1] 현재 확장 상태 복사본 생성
