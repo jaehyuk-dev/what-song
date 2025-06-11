@@ -21,7 +21,7 @@ class _MainScreenState extends State<MainScreen> {
   // 네비게이션 아이템 선택 시 호출되는 함수
 // 네비게이션 아이템 선택 시 호출되는 함수
   void _onItemTapped(int index) {
-    // 탐색하기 탭(인덱스 1)을 누른 경우 지도 열기
+    // 노래방 찾기 탭(인덱스 1)을 누른 경우 지도 열기
     if (index == 1) {
       _launchNaverMap();
       return; // 함수 종료하여 화면 변경 방지
@@ -47,7 +47,7 @@ class _MainScreenState extends State<MainScreen> {
     // 화면 초기화 - 각 탭에 해당하는 화면 추가
     _screens = [
       HomeScreen(onTabChange: _onItemTapped),
-      const SearchStoreScreen(), // 탐색하기 화면 추가
+      const SearchStoreScreen(), // 노래방 찾기 화면 추가
       const SongListScreen(), // 저장목록 화면 추가
       const SettingScreen(), // 설정 화면 추가
     ];
@@ -73,7 +73,7 @@ class _MainScreenState extends State<MainScreen> {
         type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: '홈'),
-          BottomNavigationBarItem(icon: Icon(Icons.mic), label: '탐색하기'),
+          BottomNavigationBarItem(icon: Icon(Icons.mic), label: '노래방 찾기'),
           BottomNavigationBarItem(
               icon: Icon(Icons.favorite_border), label: '저장목록'),
           BottomNavigationBarItem(icon: Icon(Icons.settings), label: '설정'),
