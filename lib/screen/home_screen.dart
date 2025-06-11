@@ -173,8 +173,15 @@ class _HomeScreenState extends State<HomeScreen> {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: ListView(
-                children: [
+              child: RefreshIndicator(
+                color: const Color(0xFFFF7A5A),
+                onRefresh: () async {
+                  await _loadRecentFavoriteSongs();
+                  await _loadRandomRecommendedSong();
+                },
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
                   const SizedBox(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
