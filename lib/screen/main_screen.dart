@@ -6,9 +6,10 @@ import 'home_screen.dart';
 import 'setting_screen.dart';
 import 'song_list_screen.dart';
 import 'search_store_screen.dart'; // SearchRoomScreen 임포트 추가
+import '../core/tab_change_callback.dart';
 
 class MainScreen extends StatefulWidget {
-  final Function(int)? onTabChange;
+  final TabChangeCallback? onTabChange;
   const MainScreen({super.key, this.onTabChange});
 
   @override
@@ -17,28 +18,32 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
+  bool _searchShowFavorites = false;
 
   // 네비게이션 아이템 선택 시 호출되는 함수
-// 네비게이션 아이템 선택 시 호출되는 함수
-  void _onItemTapped(int index) {
+  void _onItemTapped(int index, {bool showFavorites = false}) {
     // 탐색하기 탭(인덱스 1)을 누른 경우 지도 열기
-    if (index == 1) {
+    if (index == 1 && !showFavorites) {
       _launchNaverMap();
       return; // 함수 종료하여 화면 변경 방지
     }
 
     setState(() {
       _currentIndex = index;
+      if (index == 1) {
+        _searchShowFavorites = showFavorites;
+        _screens[1] = SearchStoreScreen(showFavorites: _searchShowFavorites);
+      }
     });
 
     // 콜백 함수가 있으면 호출
     if (widget.onTabChange != null) {
-      widget.onTabChange!(index);
+      widget.onTabChange!(index, showFavorites: showFavorites);
     }
   }
 
   // 다른 화면으로 이동할 콘텐츠 준비
-  late final List<Widget> _screens;
+  late List<Widget> _screens;
 
   @override
   void initState() {
@@ -47,7 +52,7 @@ class _MainScreenState extends State<MainScreen> {
     // 화면 초기화 - 각 탭에 해당하는 화면 추가
     _screens = [
       HomeScreen(onTabChange: _onItemTapped),
-      const SearchStoreScreen(), // 탐색하기 화면 추가
+      SearchStoreScreen(showFavorites: _searchShowFavorites),
       const SongListScreen(), // 저장목록 화면 추가
       const SettingScreen(), // 설정 화면 추가
     ];
@@ -78,7 +83,7 @@ class _MainScreenState extends State<MainScreen> {
               icon: Icon(Icons.favorite_border), label: '저장목록'),
           BottomNavigationBarItem(icon: Icon(Icons.settings), label: '설정'),
         ],
-        onTap: _onItemTapped,
+        onTap: (index) => _onItemTapped(index),
       ),
     );
   }

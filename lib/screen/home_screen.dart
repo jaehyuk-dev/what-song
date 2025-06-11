@@ -3,9 +3,10 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../core/database_helper.dart';
 import '../service/loading_service.dart';
+import '../core/tab_change_callback.dart';
 
 class HomeScreen extends StatefulWidget {
-  final Function(int)? onTabChange;
+  final TabChangeCallback? onTabChange;
 
   const HomeScreen({Key? key, this.onTabChange}) : super(key: key);
 
@@ -272,9 +273,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               fontWeight: FontWeight.bold)),
                       TextButton(
                         onPressed: () {
-                          // 즐겨찾기 탭으로 이동 (인덱스 2번)
+                          // 즐겨찾기 전체보기 - 탐색하기 탭으로 이동하며 즐겨찾기 섹션 확장
                           if (widget.onTabChange != null) {
-                            widget.onTabChange!(2);
+                            widget.onTabChange!(1, showFavorites: true);
                           }
                         },
                         child: const Text('전체보기',
