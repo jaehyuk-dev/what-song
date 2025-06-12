@@ -1,3 +1,7 @@
+key.properties
+**/*.keystore
+**/*.jks
+
 # Miscellaneous
 *.class
 *.log
