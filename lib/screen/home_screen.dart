@@ -5,7 +5,8 @@ import '../core/database_helper.dart';
 import '../service/loading_service.dart';
 
 class HomeScreen extends StatefulWidget {
-  final Function(int)? onTabChange;
+  // 함수 타입을 named parameter를 지원하도록 수정
+  final Function(int, {bool shouldExpandFavorites})? onTabChange;
 
   const HomeScreen({Key? key, this.onTabChange}) : super(key: key);
 
@@ -281,7 +282,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           onPressed: () {
                             // 즐겨찾기 탭으로 이동 (인덱스 2번)
                             if (widget.onTabChange != null) {
-                              widget.onTabChange!(2);
+                              widget.onTabChange!(2, shouldExpandFavorites: true); // 추가 파라미터
                             }
                           },
                           child: const Text('전체보기',

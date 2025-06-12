@@ -5,7 +5,7 @@ import '../service/loading_service.dart';
 import 'home_screen.dart';
 import 'setting_screen.dart';
 import 'song_list_screen.dart';
-import 'search_store_screen.dart'; // SearchRoomScreen 임포트 추가
+import 'search_store_screen.dart';
 
 class MainScreen extends StatefulWidget {
   final Function(int)? onTabChange;
@@ -18,9 +18,11 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
 
-  // 네비게이션 아이템 선택 시 호출되는 함수
-// 네비게이션 아이템 선택 시 호출되는 함수
-  void _onItemTapped(int index) {
+  // SongListScreen에 접근하기 위한 GlobalKey 추가
+  final GlobalKey<SongListScreenState> _songListKey = GlobalKey<SongListScreenState>();
+
+  // 네비게이션 아이템 선택 시 호출되는 함수 (수정됨)
+  void _onItemTapped(int index, {bool shouldExpandFavorites = false}) {
     // 노래방 찾기 탭(인덱스 1)을 누른 경우 지도 열기
     if (index == 1) {
       _launchNaverMap();
@@ -30,6 +32,14 @@ class _MainScreenState extends State<MainScreen> {
     setState(() {
       _currentIndex = index;
     });
+
+    // 저장목록 탭으로 이동하면서 즐겨찾기 확장 요청이 있는 경우
+    if (index == 2 && shouldExpandFavorites) {
+      // 다음 프레임에서 즐겨찾기 확장 실행
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _songListKey.currentState?.expandFavorites();
+      });
+    }
 
     // 콜백 함수가 있으면 호출
     if (widget.onTabChange != null) {
@@ -44,12 +54,12 @@ class _MainScreenState extends State<MainScreen> {
   void initState() {
     super.initState();
 
-    // 화면 초기화 - 각 탭에 해당하는 화면 추가
+    // 화면 초기화 - 각 탭에 해당하는 화면 추가 (수정됨)
     _screens = [
-      HomeScreen(onTabChange: _onItemTapped),
-      const SearchStoreScreen(), // 노래방 찾기 화면 추가
-      const SongListScreen(), // 저장목록 화면 추가
-      const SettingScreen(), // 설정 화면 추가
+      HomeScreen(onTabChange: _onItemTapped), // 수정된 콜백 전달
+      const SearchStoreScreen(),
+      SongListScreen(key: _songListKey), // GlobalKey 추가
+      const SettingScreen(),
     ];
   }
 
@@ -64,12 +74,12 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF181E2A),
-      body: _screens[_currentIndex], // 현재 선택된 인덱스에 따라 화면 표시
+      body: _screens[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: const Color(0xFF232B3A),
         selectedItemColor: const Color(0xFFFF7A5A),
         unselectedItemColor: Colors.white54,
-        currentIndex: _currentIndex, // 현재 선택된 인덱스 설정
+        currentIndex: _currentIndex,
         type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: '홈'),
@@ -78,11 +88,10 @@ class _MainScreenState extends State<MainScreen> {
               icon: Icon(Icons.favorite_border), label: '저장목록'),
           BottomNavigationBarItem(icon: Icon(Icons.settings), label: '설정'),
         ],
-        onTap: _onItemTapped,
+        onTap: (index) => _onItemTapped(index), // 기본 탭만 전달
       ),
     );
   }
-
 
   Future<void> _launchNaverMap() async {
     try {
