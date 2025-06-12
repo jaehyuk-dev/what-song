@@ -60,6 +60,9 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^4.0.0
 
+  flutter_native_splash: ^2.3.2
+
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
@@ -101,3 +104,11 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+flutter_native_splash:
+  background_image: assets/images/splash_icon_4.png
+  color: "#2b2b2b"
+
+  android_12:
+    background_image: assets/images/splash_icon_4.png
+    color: "#2b2b2b"
