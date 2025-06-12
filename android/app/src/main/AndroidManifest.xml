@@ -4,7 +4,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
-        android:label="what_song"
+        android:label="코노코노"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
