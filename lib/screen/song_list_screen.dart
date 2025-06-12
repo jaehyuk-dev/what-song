@@ -722,48 +722,60 @@ class _SongListScreenState extends State<SongListScreen> {
           child: _isManageMode ? _buildManageModeAppBar() : _buildNormalAppBar(),
         ),
       ),
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(
-                color: Color(0xFFFF7A5A),
-              ),
-            )
-          : _categories.isEmpty
-              ? _buildEmptyState()
-              : _buildCategoryList(),
+      body: RefreshIndicator(
+        color: const Color(0xFFFF7A5A),
+        onRefresh: () async {
+          await _loadCategoriesAndSongs();
+        },
+        child: _isLoading
+            ? const Center(
+                child: CircularProgressIndicator(
+                  color: Color(0xFFFF7A5A),
+                ),
+              )
+            : _categories.isEmpty
+                ? _buildEmptyState()
+                : _buildCategoryList(),
+      ),
     );
   }
 
   // 빈 상태 위젯
   Widget _buildEmptyState() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.music_note_outlined,
-            size: 80,
-            color: Colors.white24,
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height - kToolbarHeight,
+        child: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.music_note_outlined,
+                size: 80,
+                color: Colors.white24,
+              ),
+              SizedBox(height: 16),
+              Text(
+                '아직 카테고리가 없습니다',
+                style: TextStyle(
+                  color: Colors.white54,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                '노래를 추가해서 카테고리를 만들어보세요!',
+                style: TextStyle(
+                  color: Colors.white38,
+                  fontSize: 14,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
-          SizedBox(height: 16),
-          Text(
-            '아직 카테고리가 없습니다',
-            style: TextStyle(
-              color: Colors.white54,
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            '노래를 추가해서 카테고리를 만들어보세요!',
-            style: TextStyle(
-              color: Colors.white38,
-              fontSize: 14,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -772,6 +784,7 @@ class _SongListScreenState extends State<SongListScreen> {
   Widget _buildCategoryList() {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
+      physics: const AlwaysScrollableScrollPhysics(),
       itemCount: _categories.length,
       itemBuilder: (context, index) {
         final category = _categories[index];

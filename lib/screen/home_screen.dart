@@ -174,8 +174,15 @@ class _HomeScreenState extends State<HomeScreen> {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: ListView(
-                children: [
+              child: RefreshIndicator(
+                color: const Color(0xFFFF7A5A),
+                onRefresh: () async {
+                  await _loadRecentFavoriteSongs();
+                  await _loadRandomRecommendedSong();
+                },
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
                   const SizedBox(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -227,7 +234,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   // 동적 추천곡 카드
                   _buildRecommendedSongCard(),
                   const SizedBox(height: 20),
-                  // 주변 노래방, 노래 검색 버튼
+                  // 노래방 찾기, 노래 검색 버튼
                   Row(
                     children: [
                       Expanded(
@@ -238,7 +245,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
                           icon: const Icon(Icons.place_outlined),
-                          label: const Text('주변 노래방'),
+                          label: const Text('노래방 찾기'),
                           onPressed: () {
                             _launchNaverMap();
                           },

@@ -78,7 +78,7 @@ class _MainScreenState extends State<MainScreen> {
         type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: '홈'),
-          BottomNavigationBarItem(icon: Icon(Icons.mic), label: '탐색하기'),
+          BottomNavigationBarItem(icon: Icon(Icons.mic), label: '노래방 찾기'),
           BottomNavigationBarItem(
               icon: Icon(Icons.favorite_border), label: '저장목록'),
           BottomNavigationBarItem(icon: Icon(Icons.settings), label: '설정'),
