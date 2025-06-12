@@ -297,9 +297,46 @@ class _SettingScreenState extends State<SettingScreen> {
 
   /// 개인정보처리방침 페이지로 이동
   Future<void> _openPrivacyPolicy() async {
-    // 실제 개인정보처리방침 URL로 변경하세요
-    const String privacyUrl = 'https://sites.google.com/view/what-song-privacy-policy';
-    await _launchUrl(privacyUrl);
+    const String privacyUrl =
+        'https://sites.google.com/view/what-song-privacy-policy';
+    final uri = Uri.parse(privacyUrl);
+
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication,
+          webViewConfiguration: const WebViewConfiguration(
+            enableJavaScript: true,
+            enableDomStorage: true,
+          ),
+        );
+      } else {
+        // canLaunchUrl이 false를 반환해도 시도해보기
+        try {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('웹 브라우저를 열 수 없습니다.'),
+                backgroundColor: Colors.red,
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('링크를 여는 중 오류가 발생했습니다: $e'),
+            backgroundColor: const Color(0xFF232B3A),
+          ),
+        );
+      }
+    }
   }
 
   /// 설정 아이템 위젯
