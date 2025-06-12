@@ -6,10 +6,10 @@ class SongListScreen extends StatefulWidget {
   const SongListScreen({super.key});
 
   @override
-  State<SongListScreen> createState() => _SongListScreenState();
+  State<SongListScreen> createState() => SongListScreenState();
 }
 
-class _SongListScreenState extends State<SongListScreen> {
+class SongListScreenState extends State<SongListScreen> {
   final DatabaseHelper _dbHelper = DatabaseHelper();
   List<Map<String, dynamic>> _categories = [];
   Map<int, List<Map<String, dynamic>>> _categorySongs = {};
@@ -306,6 +306,36 @@ class _SongListScreenState extends State<SongListScreen> {
         _isAllSelected = false;
       }
     });
+  }
+
+// 외부에서 즐겨찾기 확장을 요청할 수 있는 public 메서드 수정
+  void expandFavorites() {
+    print('expandFavorites 호출됨 - 현재 즐겨찾기 수: ${_favoriteSongs.length}');
+
+    // 데이터가 아직 로드되지 않았다면 로드 후 확장
+    if (_isLoading) {
+      print('아직 로딩 중이므로 로드 완료 후 확장 예정');
+      // 로딩이 완료되면 자동으로 확장되도록 플래그 설정
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_favoriteSongs.isNotEmpty) {
+          setState(() {
+            _isFavoriteExpanded = true;
+          });
+          print('로드 완료 후 즐겨찾기 확장됨');
+        }
+      });
+      return;
+    }
+
+    // 즐겨찾기 노래가 있으면 무조건 확장 (현재 상태와 관계없이)
+    if (_favoriteSongs.isNotEmpty) {
+      setState(() {
+        _isFavoriteExpanded = true;
+      });
+      print('즐겨찾기 확장됨: ${_favoriteSongs.length}곡');
+    } else {
+      print('즐겨찾기 노래가 없어서 확장할 수 없음');
+    }
   }
 
   // 전체 선택 토글
