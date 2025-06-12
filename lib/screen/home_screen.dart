@@ -103,15 +103,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   minimumSize: const Size(40, 40),
                 ),
-                onPressed: _randomRecommendedSong != null 
-                  ? () {
-                      // 추천곡이 있을 때만 검색 기능 실행
-                      _searchSongNumber(
-                        _randomRecommendedSong!['name'], 
-                        _randomRecommendedSong!['singer']
-                      );
-                    }
-                  : null, // 추천곡이 없으면 비활성화
+                onPressed: _randomRecommendedSong != null
+                    ? () {
+                  // 추천곡이 있을 때만 검색 기능 실행
+                  _searchSongNumber(
+                      _randomRecommendedSong!['name'],
+                      _randomRecommendedSong!['singer']
+                  );
+                }
+                    : null, // 추천곡이 없으면 비활성화
                 icon: const Icon(Icons.search, size: 20),
               ),
             ],
@@ -182,116 +182,117 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   children: [
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.music_note_rounded,
-                        color: Color(0xFFFF7A5A), // 포인트 컬러 적용
-                        size: 28, // 아이콘 크기를 약간 줄여 텍스트와 조화롭게 조정
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '코노코노',
-                        style: TextStyle(
-                          fontSize: 28, // 기존 32에서 살짝 줄여 아이콘과 균형을 맞춤
-                          fontWeight: FontWeight.w700, // 너무 과하지 않은 볼드체
-                          color: const Color(0xFFFF7A5A), // ‘전체보기’ 버튼과 동일한 주황 계열 포인트 컬러
-                          letterSpacing: 2, // 글자 간격을 조금 넓혀 시인성 강조
-                          shadows: [
-                            Shadow(
-                              offset: const Offset(1.5, 1.5),
-                              blurRadius: 4,
-                              color: Colors.black.withOpacity(0.3),
-                            ),
-                          ],
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.music_note_rounded,
+                          color: Color(0xFFFF7A5A), // 포인트 컬러 적용
+                          size: 28, // 아이콘 크기를 약간 줄여 텍스트와 조화롭게 조정
                         ),
-                      ),
-                      const SizedBox(width: 6),
-                      const Icon(
-                        Icons.music_note_rounded,
-                        color: Color(0xFFFF7A5A),
-                        size: 28,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  const Text(
-                    '안녕하세요 👋',
-                    style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    '오늘은 어떤 노래를 부르실까요?',
-                    style: TextStyle(fontSize: 14, color: Colors.white70),
-                  ),
-                  const SizedBox(height: 24),
-                  // 동적 추천곡 카드
-                  _buildRecommendedSongCard(),
-                  const SizedBox(height: 20),
-                  // 노래방 찾기, 노래 검색 버튼
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF232B3A),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
-                          icon: const Icon(Icons.place_outlined),
-                          label: const Text('노래방 찾기'),
-                          onPressed: () {
-                            _launchNaverMap();
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF232B3A),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
-                          icon: const Icon(Icons.search),
-                          label: const Text('번호 검색'),
-                          onPressed: () {
-                            _searchSongNumber("", "");
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 28),
-                  // 내 노래 리스트 헤더
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('즐겨찾기',
+                        const SizedBox(width: 6),
+                        Text(
+                          '코노코노',
                           style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold)),
-                      TextButton(
-                        onPressed: () {
-                          // 즐겨찾기 탭으로 이동 (인덱스 2번)
-                          if (widget.onTabChange != null) {
-                            widget.onTabChange!(2);
-                          }
-                        },
-                        child: const Text('전체보기',
-                            style: TextStyle(color: Color(0xFFFF7A5A))),
-                      ),
-                    ],
-                  ),
-                  // 동적 노래 리스트 (즐겨찾기 최신 5개)
-                  ..._buildRecentFavoriteSongsList(),
-                ],
+                            fontSize: 28, // 기존 32에서 살짝 줄여 아이콘과 균형을 맞춤
+                            fontWeight: FontWeight.w700, // 너무 과하지 않은 볼드체
+                            color: const Color(0xFFFF7A5A), // '전체보기' 버튼과 동일한 주황 계열 포인트 컬러
+                            letterSpacing: 2, // 글자 간격을 조금 넓혀 시인성 강조
+                            shadows: [
+                              Shadow(
+                                offset: const Offset(1.5, 1.5),
+                                blurRadius: 4,
+                                color: Colors.black.withOpacity(0.3),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        const Icon(
+                          Icons.music_note_rounded,
+                          color: Color(0xFFFF7A5A),
+                          size: 28,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      '안녕하세요 👋',
+                      style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      '오늘은 어떤 노래를 부르실까요?',
+                      style: TextStyle(fontSize: 14, color: Colors.white70),
+                    ),
+                    const SizedBox(height: 24),
+                    // 동적 추천곡 카드
+                    _buildRecommendedSongCard(),
+                    const SizedBox(height: 20),
+                    // 노래방 찾기, 노래 검색 버튼
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF232B3A),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            ),
+                            icon: const Icon(Icons.place_outlined),
+                            label: const Text('노래방 찾기'),
+                            onPressed: () {
+                              _launchNaverMap();
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF232B3A),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            ),
+                            icon: const Icon(Icons.search),
+                            label: const Text('번호 검색'),
+                            onPressed: () {
+                              _searchSongNumber("", "");
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 28),
+                    // 내 노래 리스트 헤더
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('즐겨찾기',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold)),
+                        TextButton(
+                          onPressed: () {
+                            // 즐겨찾기 탭으로 이동 (인덱스 2번)
+                            if (widget.onTabChange != null) {
+                              widget.onTabChange!(2);
+                            }
+                          },
+                          child: const Text('전체보기',
+                              style: TextStyle(color: Color(0xFFFF7A5A))),
+                        ),
+                      ],
+                    ),
+                    // 동적 노래 리스트 (즐겨찾기 최신 5개)
+                    ..._buildRecentFavoriteSongsList(),
+                  ],
+                ),
               ),
             ),
           ),
@@ -505,7 +506,6 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     }
   }
-
 
   // 실제 검색 수행 (추후 구현)
   void _performSearch(String songName, String singer) {
