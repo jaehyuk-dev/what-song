@@ -47,6 +47,7 @@ dependencies:
   provider: ^6.1.2
   logger: ^2.5.0
   package_info_plus: ^8.0.2  # 앱 정보 가져오기
+  google_mobile_ads: ^5.1.0  # Google AdMob 광고
 
 
 dev_dependencies:

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../service/loading_service.dart';
+import '../widget/banner_ad_widget.dart';
 import 'home_screen.dart';
 import 'setting_screen.dart';
 import 'song_list_screen.dart';
@@ -75,20 +76,26 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF181E2A),
       body: _screens[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: const Color(0xFF232B3A),
-        selectedItemColor: const Color(0xFFFF7A5A),
-        unselectedItemColor: Colors.white54,
-        currentIndex: _currentIndex,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: '홈'),
-          BottomNavigationBarItem(icon: Icon(Icons.mic), label: '노래방 찾기'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.favorite_border), label: '저장목록'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: '설정'),
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const BannerAdWidget(),
+          BottomNavigationBar(
+            backgroundColor: const Color(0xFF232B3A),
+            selectedItemColor: const Color(0xFFFF7A5A),
+            unselectedItemColor: Colors.white54,
+            currentIndex: _currentIndex,
+            type: BottomNavigationBarType.fixed,
+            items: const [
+              BottomNavigationBarItem(icon: Icon(Icons.home), label: '홈'),
+              BottomNavigationBarItem(icon: Icon(Icons.mic), label: '노래방 찾기'),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.favorite_border), label: '저장목록'),
+              BottomNavigationBarItem(icon: Icon(Icons.settings), label: '설정'),
+            ],
+            onTap: (index) => _onItemTapped(index), // 기본 탭만 전달
+          ),
         ],
-        onTap: (index) => _onItemTapped(index), // 기본 탭만 전달
       ),
     );
   }
