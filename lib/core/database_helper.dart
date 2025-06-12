@@ -225,6 +225,21 @@ class DatabaseHelper {
     return await db.delete('songs', where: 'id = ?', whereArgs: [id]);
   }
 
+  // 모든 데이터 초기화 (테이블은 유지, 데이터만 삭제)
+  Future<void> clearAllData() async {
+    final db = await database;
+
+    // 트랜잭션으로 안전하게 처리
+    await db.transaction((txn) async {
+      // 노래 테이블의 모든 데이터 삭제
+      await txn.delete('songs');
+
+      // 카테고리 테이블의 모든 데이터 삭제
+      await txn.delete('categories');
+    });
+  }
+
+
   // === 유틸리티 메서드 ===
 
   // 데이터베이스 닫기

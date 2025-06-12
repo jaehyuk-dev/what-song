@@ -5,6 +5,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../core/database_helper.dart';
+
 class SettingScreen extends StatefulWidget {
   const SettingScreen({super.key});
 
@@ -15,7 +17,9 @@ class SettingScreen extends StatefulWidget {
 class _SettingScreenState extends State<SettingScreen> {
   String _appVersion = '';
   final String _developerEmail = 'jaehyuk.dev@gmail.com';
-  
+  final DatabaseHelper _dbHelper = DatabaseHelper();
+
+
   @override
   void initState() {
     super.initState();
@@ -79,8 +83,8 @@ class _SettingScreenState extends State<SettingScreen> {
         await prefs.clear();
         
         // 데이터베이스 초기화도 필요시 여기에 추가
-        // await DatabaseHelper.instance.deleteDatabase();
-        
+        await _dbHelper.clearAllData();
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
