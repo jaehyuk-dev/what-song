@@ -14,8 +14,11 @@ class _SongListScreenState extends State<SongListScreen> {
   List<Map<String, dynamic>> _categories = [];
   Map<int, List<Map<String, dynamic>>> _categorySongs = {};
   Map<int, bool> _expandedCategories = {};
+  List<Map<String, dynamic>> _favoriteSongs = []; // 즐겨찾기 노래 목록 추가
   bool _isLoading = true;
-  
+  bool _isFavoriteExpanded = false; // 즐겨찾기 확장 상태 추가
+
+
   // 카테고리 관리 모드 상태
   bool _isManageMode = false;
   Set<int> _selectedCategories = {};
@@ -130,8 +133,7 @@ class _SongListScreenState extends State<SongListScreen> {
     );
   }
 
-// SongListScreen 클래스 내부
-// 1. _loadCategoriesAndSongs 메서드 수정본
+  // 1. _loadCategoriesAndSongs 메서드 수정본
   Future<void> _loadCategoriesAndSongs({ Map<int, bool>? preserveExpanded }) async {
     setState(() {
       _isLoading = true;
@@ -150,12 +152,16 @@ class _SongListScreenState extends State<SongListScreen> {
         categorySongs[categoryId] = songs;
       }
 
+      // [3] 즐겨찾기 노래 로드 추가
+      List<Map<String, dynamic>> favoriteSongs = await _dbHelper.getFavoriteSongs();
+
       setState(() {
         _categories = categories;
         _categorySongs = categorySongs;
+        _favoriteSongs = favoriteSongs; // 즐겨찾기 노래 설정
         _isLoading = false;
 
-        // [3] 확장 상태 보존 로직
+        // [4] 확장 상태 보존 로직
         _expandedCategories = {
           for (var category in categories)
             category['id']: (preserveExpanded?[category['id']] == true)
@@ -169,9 +175,8 @@ class _SongListScreenState extends State<SongListScreen> {
     }
   }
 
-
   // 즐겨찾기 토글
-// 2. _toggleFavorite 메서드 수정본
+  // 2. _toggleFavorite 메서드 수정본
   Future<void> _toggleFavorite(int songId) async {
     try {
       // [1] 현재 확장 상태 복사본 생성
@@ -186,8 +191,6 @@ class _SongListScreenState extends State<SongListScreen> {
       print('즐겨찾기 토글 오류: $e');
     }
   }
-
-
 
   // 카테고리 확장/축소 토글
   void _toggleCategoryExpansion(int categoryId) {
@@ -344,7 +347,7 @@ class _SongListScreenState extends State<SongListScreen> {
     // 선택된 카테고리에 포함된 총 노래 수 계산
     int totalSongs = 0;
     List<String> categoryNames = [];
-    
+
     for (int categoryId in _selectedCategories) {
       var category = _categories.firstWhere((cat) => cat['id'] == categoryId);
       categoryNames.add(category['name']);
@@ -548,7 +551,7 @@ class _SongListScreenState extends State<SongListScreen> {
 
     try {
       await _dbHelper.insertCategory(categoryName);
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('"$categoryName" 카테고리가 추가되었습니다!'),
@@ -656,9 +659,8 @@ class _SongListScreenState extends State<SongListScreen> {
     }
   }
 
-
   // 노래 추가 실행
-// 4. _addSong 메서드 수정본
+  // 4. _addSong 메서드 수정본
   Future<void> _addSong({
     required int categoryId,
     required String songName,
@@ -707,6 +709,236 @@ class _SongListScreenState extends State<SongListScreen> {
     }
   }
 
+  // 즐겨찾기 확장/축소 토글 메서드 추가
+  void _toggleFavoriteExpansion() {
+    setState(() {
+      _isFavoriteExpanded = !_isFavoriteExpanded;
+    });
+  }
+
+// 즐겨찾기 노래 목록을 별도 메서드로 분리
+  Widget _buildFavoriteSongList() {
+    return Column(
+      children: [
+        ..._favoriteSongs.map((song) {
+          final songId = song['id'] as int;
+          final songName = song['name'] as String;
+          final singer = song['singer'] as String;
+          final categoryName = song['category_name'] as String;
+
+          return Container(
+            margin: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF232B3A),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  // 즐겨찾기 하트 아이콘
+                  InkWell(
+                    onTap: () {
+                      _toggleFavorite(songId);
+                    },
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.favorite,
+                        color: Colors.red,
+                        size: 22,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // 노래 정보
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          songName,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            Text(
+                              singer,
+                              style: const TextStyle(
+                                color: Colors.white60,
+                                fontSize: 13,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFF7A5A).withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                categoryName,
+                                style: const TextStyle(
+                                  color: Color(0xFFFF7A5A),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // 검색 아이콘
+                  InkWell(
+                    onTap: () {
+                      _searchSongNumber(songName, singer);
+                    },
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF7A5A).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.search,
+                        color: Color(0xFFFF7A5A),
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }).toList(),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+
+  // 2. 즐겨찾기 카드 위젯 생성
+  // 즐겨찾기 카드 위젯 수정
+  Widget _buildFavoriteCard() {
+    if (_favoriteSongs.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFFFF7A5A).withOpacity(0.1),
+            const Color(0xFFFF7A5A).withOpacity(0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: _isFavoriteExpanded
+              ? const Color(0xFFFF7A5A).withOpacity(0.5)
+              : const Color(0xFFFF7A5A).withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 헤더 (탭 가능하게 수정)
+          InkWell(
+            onTap: _toggleFavoriteExpansion,
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  // 펼침/접힘 아이콘 추가
+                  AnimatedRotation(
+                    turns: _isFavoriteExpanded ? 0.5 : 0.0,
+                    duration: const Duration(milliseconds: 200),
+                    child: Icon(
+                      Icons.keyboard_arrow_down,
+                      color: _isFavoriteExpanded ? const Color(0xFFFF7A5A) : Colors.white70,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF7A5A),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.favorite,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    '즐겨찾기',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF7A5A).withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${_favoriteSongs.length}곡',
+                      style: const TextStyle(
+                        color: Color(0xFFFF7A5A),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // 즐겨찾기 노래 목록 (애니메이션으로 펼쳐짐/접힘)
+          AnimatedCrossFade(
+            firstChild: const SizedBox.shrink(),
+            secondChild: _buildFavoriteSongList(),
+            crossFadeState: _isFavoriteExpanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
+            duration: const Duration(milliseconds: 300),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -729,13 +961,13 @@ class _SongListScreenState extends State<SongListScreen> {
         },
         child: _isLoading
             ? const Center(
-                child: CircularProgressIndicator(
-                  color: Color(0xFFFF7A5A),
-                ),
-              )
-            : _categories.isEmpty
-                ? _buildEmptyState()
-                : _buildCategoryList(),
+          child: CircularProgressIndicator(
+            color: Color(0xFFFF7A5A),
+          ),
+        )
+            : _categories.isEmpty && _favoriteSongs.isEmpty
+            ? _buildEmptyState()
+            : _buildMainContent(),
       ),
     );
   }
@@ -780,26 +1012,30 @@ class _SongListScreenState extends State<SongListScreen> {
     );
   }
 
-  // 카테고리 리스트 빌드
-  Widget _buildCategoryList() {
-    return ListView.builder(
+  // 메인 컨텐츠 빌드
+  Widget _buildMainContent() {
+    return ListView(
       padding: const EdgeInsets.all(16),
       physics: const AlwaysScrollableScrollPhysics(),
-      itemCount: _categories.length,
-      itemBuilder: (context, index) {
-        final category = _categories[index];
-        final categoryId = category['id'] as int;
-        final categoryName = category['name'] as String;
-        final songs = _categorySongs[categoryId] ?? [];
-        final isExpanded = _expandedCategories[categoryId] ?? false;
+      children: [
+        // 1. 즐겨찾기 카드 (맨 위에 배치)
+        _buildFavoriteCard(),
 
-        return _buildCategoryCard(
-          categoryId: categoryId,
-          categoryName: categoryName,
-          songs: songs,
-          isExpanded: isExpanded,
-        );
-      },
+        // 2. 일반 카테고리들
+        ..._categories.map((category) {
+          final categoryId = category['id'] as int;
+          final categoryName = category['name'] as String;
+          final songs = _categorySongs[categoryId] ?? [];
+          final isExpanded = _expandedCategories[categoryId] ?? false;
+
+          return _buildCategoryCard(
+            categoryId: categoryId,
+            categoryName: categoryName,
+            songs: songs,
+            isExpanded: isExpanded,
+          );
+        }).toList(),
+      ],
     );
   }
 
@@ -824,7 +1060,7 @@ class _SongListScreenState extends State<SongListScreen> {
         children: [
           // 카테고리 헤더
           InkWell(
-            onTap: _isManageMode 
+            onTap: _isManageMode
                 ? () => _toggleCategorySelection(categoryId)
                 : () => _toggleCategoryExpansion(categoryId),
             borderRadius: BorderRadius.circular(12),
@@ -833,32 +1069,32 @@ class _SongListScreenState extends State<SongListScreen> {
               child: Row(
                 children: [
                   // 관리 모드일 때 체크박스 표시, 일반 모드일 때 접힘/열림 아이콘
-                  _isManageMode 
-                    ? Row(
-                        children: [
-                          Checkbox(
-                            value: _selectedCategories.contains(categoryId),
-                            onChanged: (value) => _toggleCategorySelection(categoryId),
-                            activeColor: const Color(0xFFFF7A5A),
-                            checkColor: Colors.white,
-                          ),
-                          const SizedBox(width: 8),
-                        ],
-                      )
-                    : Row(
-                        children: [
-                          AnimatedRotation(
-                            turns: isExpanded ? 0.5 : 0.0,
-                            duration: const Duration(milliseconds: 200),
-                            child: Icon(
-                              Icons.keyboard_arrow_down,
-                              color: isExpanded ? const Color(0xFFFF7A5A) : Colors.white70,
-                              size: 24,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                        ],
+                  _isManageMode
+                      ? Row(
+                    children: [
+                      Checkbox(
+                        value: _selectedCategories.contains(categoryId),
+                        onChanged: (value) => _toggleCategorySelection(categoryId),
+                        activeColor: const Color(0xFFFF7A5A),
+                        checkColor: Colors.white,
                       ),
+                      const SizedBox(width: 8),
+                    ],
+                  )
+                      : Row(
+                    children: [
+                      AnimatedRotation(
+                        turns: isExpanded ? 0.5 : 0.0,
+                        duration: const Duration(milliseconds: 200),
+                        child: Icon(
+                          Icons.keyboard_arrow_down,
+                          color: isExpanded ? const Color(0xFFFF7A5A) : Colors.white70,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                    ],
+                  ),
                   // 카테고리 정보
                   Expanded(
                     child: Column(
@@ -914,8 +1150,8 @@ class _SongListScreenState extends State<SongListScreen> {
           AnimatedCrossFade(
             firstChild: const SizedBox.shrink(),
             secondChild: _buildSongList(songs),
-            crossFadeState: isExpanded 
-                ? CrossFadeState.showSecond 
+            crossFadeState: isExpanded
+                ? CrossFadeState.showSecond
                 : CrossFadeState.showFirst,
             duration: const Duration(milliseconds: 300),
           ),
@@ -1059,8 +1295,8 @@ class _SongListScreenState extends State<SongListScreen> {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: isFavorite 
-                            ? Colors.red.withOpacity(0.1) 
+                        color: isFavorite
+                            ? Colors.red.withOpacity(0.1)
                             : const Color(0xFF232B3A),
                         borderRadius: BorderRadius.circular(8),
                       ),
