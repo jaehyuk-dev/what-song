@@ -546,7 +546,7 @@ class _SettingScreenState extends State<SettingScreen> {
                   
                   // 저작권 정보
                   const Text(
-                    '© 2024 What Song App. All rights reserved.',
+                    '© 2025 What Song App. All rights reserved.',
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.white38, // 다크 테마에 맞는 텍스트 색상

@@ -72,7 +72,13 @@ cd what-song
 flutter pub get
 ```
 
-3. **앱 실행**
+3. **스플래시 화면 생성**
+
+```bash
+dart run flutter_native_splash:create
+```
+
+4. **앱 실행**
 ```bash
 # 디버그 모드
 flutter run
@@ -188,7 +194,7 @@ CREATE TABLE songs (
 ## 📞 문의 및 지원
 
 - **개발자 이메일**: jaehyuk.dev@gmail.com
-- **GitHub Issues**: 버그 신고 및 기능 요청
+  - **GitHub Issues**: 버그 신고 및 기능 요청
 - **개인정보처리방침**: [링크 준비중]
 
 ## 📄 라이선스
@@ -203,5 +209,5 @@ CREATE TABLE songs (
 ---
 
 **버전**: 1.0.0  
-**최종 업데이트**: 2024년  
+**최종 업데이트**: 2025년 06월 12일  
 **개발자**: Jaehyuk
