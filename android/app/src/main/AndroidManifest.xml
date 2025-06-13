@@ -1,4 +1,5 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.novembean.whatsong">
 
     <!-- 인터넷 권한 추가 -->
     <uses-permission android:name="android.permission.INTERNET" />

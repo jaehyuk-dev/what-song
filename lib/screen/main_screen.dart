@@ -104,7 +104,7 @@ class _MainScreenState extends State<MainScreen> {
     try {
       await LoadingService.withLoading(() async {
         final encodedKeyword = Uri.encodeComponent("코인노래방");
-        final appSchemeUrl = "nmap://search?query=$encodedKeyword&appname=com.app.lunch_mate";
+        final appSchemeUrl = "nmap://search?query=$encodedKeyword&appname=com.novembean.whatsong";
         final webUrl = "https://m.map.naver.com/search2/search.naver?query=$encodedKeyword";
 
         // 네이버 지도 앱이 설치되어 있는지 확인
